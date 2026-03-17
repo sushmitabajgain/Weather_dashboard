@@ -47,8 +47,11 @@ export default function Filters({ year, setYear, locations, setLocations }) {
           options={locationOptions}
           value={locations}
           onChange={setLocations}
+          components={{ ClearIndicator: () => null }}
           placeholder="Select locations..."
           styles={customSelectStyles}
+          menuPortalTarget={document.body}
+          menuPosition="fixed"
         />
       </div>
     </div>
@@ -128,7 +131,11 @@ const customSelectStyles = {
 
   menu: (base) => ({
     ...base,
-    zIndex: 9999,
     borderRadius: 10
+  }),
+
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999
   })
 };

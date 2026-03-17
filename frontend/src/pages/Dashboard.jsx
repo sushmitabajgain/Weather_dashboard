@@ -24,43 +24,44 @@ export default function Dashboard() {
 
   const variables = {
     year,
-    locations: locations.length ? locations.map(l => l.value) : null,
+    locations: locations.length ? locations.map(l => l.value) : [],
     datasetType,
     limit: 200,
     offset: 0
   };
 
-  console.log("VARIABLES:", variables);
-  
+  // MAIN DATA
   const { data, loading, error } = useQuery(GET_AQHI, { variables });
 
   // KPIs
   const { data: kpiData } = useQuery(GET_KPIS, { variables });
 
-  // grouped data
-  const { data: hourlyData } = useQuery(GET_HOURLY, { variables: { year } });
-  const { data: categoryData } = useQuery(GET_CATEGORY, { variables: { year } });
-
-  // map data (latest per location)
-  const { data: mapData } = useQuery(GET_MAP, { variables: { year } });
+  // ALL USE SAME VARIABLES
+  const { data: hourlyData } = useQuery(GET_HOURLY, { variables });
+  const { data: categoryData } = useQuery(GET_CATEGORY, { variables });
+  const { data: mapData } = useQuery(GET_MAP, { variables });
 
   if (loading) return <p style={{ padding: 20 }}>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
+  // DATA EXTRACTION
   const aqhi = data?.aqhiData || [];
   const kpis = kpiData?.kpis || {};
   const hourly = hourlyData?.hourlyAvg || [];
   const category = categoryData?.categoryDistribution || [];
   const mapPoints = mapData?.mapPoints || [];
 
+  // remove duplicate / noisy rows
+  const latestRows = aqhi;
+
   return (
     <div style={styles.page}>
       
       {/* HEADER */}
       <div style={styles.header}>
-        <h1 style={styles.title}>Alberta AQHI Dashboard</h1>
+        <h1 style={styles.title}>AQHI Dashboard</h1>
         <p style={styles.subtitle}>
-          Air Quality Health Index across Alberta
+          Air Quality Health Index across Canada
         </p>
       </div>
 
@@ -105,6 +106,7 @@ export default function Dashboard() {
           <KPI title="Locations" value={kpis.locations || 0} color="#8e44ad" />
         </div>
 
+        {/* CHARTS ROW 1 */}
         <div style={styles.row}>
           <div style={styles.chartCard}>
             <LineChart data={aqhi} />
@@ -115,6 +117,7 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* CHARTS ROW 2 */}
         <div style={styles.row}>
           <div style={styles.chartCard}>
             <HourlyChart data={hourly} />
@@ -128,7 +131,7 @@ export default function Dashboard() {
         {/* TABLE */}
         <div style={styles.card}>
           <h3 style={styles.sectionTitle}>Data Preview</h3>
-          <DataTable data={aqhi} />
+          <DataTable data={latestRows} />
         </div>
 
       </div>
@@ -150,7 +153,6 @@ const styles = {
     color: "white",
     boxShadow: "0 6px 20px rgba(0,0,0,0.2)"
   },
-
 
   title: {
     margin: 0,
@@ -176,8 +178,7 @@ const styles = {
     padding: 20,
     boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
     border: "1px solid rgba(255,255,255,0.4)",
-    marginBottom: 20,
-    transition: "all 0.25s ease"
+    marginBottom: 20
   },
 
   sectionTitle: {
