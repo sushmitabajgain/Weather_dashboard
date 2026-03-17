@@ -26,9 +26,13 @@ uvicorn main:app --reload
 
 ## Frontend
 
-For development server:
+For frontend server:
 - cd/frontend
-- npm run  dev
+
+Run:
+```
+npm run  dev
+```
 
 ## .ENV
 
