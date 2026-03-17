@@ -6,6 +6,7 @@
 
 
 ## Backend
+- cd/backend
 - Run :
 
 ```
@@ -16,10 +17,17 @@ pip install -r requirements.txt
 ```
 python load-data.py
 ```
+
+To run the server run:
+
+```
+uvicorn main:app --reload
+```
+
 ## Frontend
 
 For development server:
-
+- cd/frontend
 - npm run  dev
 
 ## .ENV
