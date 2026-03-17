@@ -12,7 +12,7 @@
 ```
 pip install -r requirements.txt
 ```
-- To add data on databse, run:
+- To add data on database, run:
 
 ```
 python load-data.py
@@ -36,7 +36,7 @@ npm run  dev
 
 ## .ENV
 
-Create .env file on **backend/.env**
+Create *.env* file on **backend/.env**
 
 Update these with your database user name, password and so on:
 
