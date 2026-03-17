@@ -40,8 +40,11 @@ Create *.env* file on **backend/.env**
 
 Update these with your database user name, password and so on:
 
+Example for development server:
+```
 DB_USER=postgres
 DB_PASSWORD=password
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=aqhi_db
+```
