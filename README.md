@@ -82,7 +82,7 @@ npm install
 npm run dev
 ```
 
-### 4. Environment Configuration
+### 4. Backend Environment Configuration
 
 Create a *.env* file inside the **backend/** directory:
 
@@ -96,6 +96,18 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=aqhi_db
 ```
+
+### 5. Frontend Environment Configuration
+
+Create a `.env` file inside the **frontend/** directory:
+
+Example:
+```
+VITE_API_URL=http://localhost:8000/graphql
+```
+This variable defines the backend GraphQL API endpoint used by the frontend application.
+
+Ensure the backend server is running before starting the frontend.
 
 ## Running the Application
 1. Start the backend server
