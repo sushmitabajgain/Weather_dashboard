@@ -118,4 +118,7 @@ http://localhost:5173
     - Map-based AQHI visualization
 
 ## Notes & Limitations
-- The current dataset includes AQHI data for the year 2026 only, which limits analysis of long-term trends and comparisons across multiple years.
+- The current dataset includes AQHI data for the year 2026 only, limiting the ability to analyze long-term trends, seasonal variations across multiple years, and historical comparisons.
+- Requires Mapbox API key for geospatial visualization  
+- Uses static datasets (no real-time data streaming)  
+ 
