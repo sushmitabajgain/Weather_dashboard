@@ -4,7 +4,6 @@ import os
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
-# Load env
 load_dotenv()
 
 DB_USER = os.getenv("DB_USER")
@@ -52,14 +51,12 @@ def load_csv(file_path, dataset_type):
     df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
     df["properties.aqhi"] = pd.to_numeric(df["properties.aqhi"], errors="coerce")
 
-    # Parse coordinates safely
     df[["longitude", "latitude"]] = df["geometry.coordinates"].apply(
         lambda x: pd.Series(parse_coordinates(x))
     )
 
     df["category"] = df["properties.aqhi"].apply(classify_aqhi)
 
-    # Build final dataframe
     final_df = pd.DataFrame({
         "location_name": df["properties.location_name_en"],
         "longitude": df["longitude"],
@@ -70,17 +67,15 @@ def load_csv(file_path, dataset_type):
         "dataset_type": dataset_type,
     })
 
-    # prevents DB errors
     final_df = final_df.dropna(subset=["aqhi", "datetime"])
 
-    # BULK INSERT
     final_df.to_sql(
         "aqhi_data",
         engine,
         if_exists="append",
         index=False,
         method="multi",
-        chunksize=1000   # improves performance
+        chunksize=1000,
     )
 
     print(f"{dataset_type} loaded: {len(final_df)} rows")

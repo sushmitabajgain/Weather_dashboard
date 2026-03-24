@@ -2,16 +2,20 @@ import Select from "react-select";
 import { useQuery } from "@apollo/client";
 import { GET_LOCATIONS } from "../graphql/queries";
 
-export default function Filters({ year, setYear, locations, setLocations }) {
-  const years = [2022, 2023, 2024, 2025, 2026];
+const TIME_RANGE_OPTIONS = [
+  { value: "24h", label: "Last 24 Hours" },
+  { value: "48h", label: "Last 48 Hours" },
+  { value: "7d", label: "Last 7 Days" },
+  { value: "year", label: "All (2026)" },
+];
 
-  // fetch locations from backend
+export default function Filters({ timeRange, setTimeRange, locations, setLocations }) {
   const { data, loading } = useQuery(GET_LOCATIONS);
 
   const locationOptions =
-    data?.locations?.map((loc) => ({
-      label: loc,
-      value: loc
+    data?.locations?.map((location) => ({
+      label: location,
+      value: location,
     })) || [];
 
   if (loading) {
@@ -20,34 +24,24 @@ export default function Filters({ year, setYear, locations, setLocations }) {
 
   return (
     <div style={styles.container}>
-      
-      {/* YEAR */}
       <div style={styles.field}>
-        <label style={styles.label}>Year</label>
-
-        <select
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-          style={styles.select}
-        >
-          {years.map((y) => (
-            <option key={y} value={y}>
-              {y}
+        <label style={styles.label}>Time Range</label>
+        <select value={timeRange} onChange={(event) => setTimeRange(event.target.value)} style={styles.select}>
+          {TIME_RANGE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
       </div>
 
-      {/* LOCATIONS */}
       <div style={styles.field}>
         <label style={styles.label}>Locations</label>
-
         <Select
           isMulti
           options={locationOptions}
           value={locations}
           onChange={setLocations}
-          components={{ ClearIndicator: () => null }}
           placeholder="Select locations..."
           styles={customSelectStyles}
           menuPortalTarget={document.body}
@@ -61,81 +55,98 @@ export default function Filters({ year, setYear, locations, setLocations }) {
 const styles = {
   container: {
     display: "flex",
-    gap: 20,
+    gap: 16,
     flexWrap: "wrap",
-    alignItems: "flex-end"
+    alignItems: "flex-end",
+    flex: "1 1 540px",
+    width: "100%",
   },
-
   field: {
     display: "flex",
     flexDirection: "column",
-    minWidth: 220,
-    flex: "1 1 220px"
+    minWidth: 0,
+    flex: "1 1 220px",
   },
-
   label: {
-    fontSize: 13,
-    fontWeight: 500,
-    marginBottom: 6,
-    color: "#1f2d3d"
+    fontSize: 12,
+    fontWeight: 700,
+    marginBottom: 8,
+    color: "#475569",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
   },
-
   select: {
-    padding: "10px",
-    borderRadius: 10,
-    border: "1px solid #dce1e7",
+    padding: "11px 12px",
+    borderRadius: 14,
+    border: "1px solid rgba(148, 163, 184, 0.3)",
     fontSize: 14,
-    background: "#fff",
-    height: 42
-  }
+    background: "rgba(255,255,255,0.92)",
+    color: "#0f172a",
+    minHeight: 46,
+    width: "100%",
+    boxShadow: "0 6px 16px rgba(15, 23, 42, 0.04)",
+  },
 };
 
-const customSelectStyles = {
-  control: (base) => ({
-    ...base,
-    borderRadius: 10,
-    borderColor: "#dce1e7",
-    boxShadow: "none",
-    padding: "2px",
-    minHeight: "42px",
-    ":hover": {
-      borderColor: "#2b7cd3"
+if (typeof document !== "undefined" && !document.getElementById("aqhi-filters-mobile-style")) {
+  const styleTag = document.createElement("style");
+  styleTag.id = "aqhi-filters-mobile-style";
+  styleTag.textContent = `
+    @media (max-width: 640px) {
+      .dash-filter-container > div {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        width: 100% !important;
+      }
     }
-  }),
+  `;
+  document.head.appendChild(styleTag);
+}
 
-  valueContainer: (base) => ({
+const customSelectStyles = {
+  control: (base, state) => ({
     ...base,
-    padding: "2px 6px"
+    borderRadius: 14,
+    borderColor: state.isFocused ? "#0072b2" : "rgba(148, 163, 184, 0.3)",
+    boxShadow: state.isFocused ? "0 0 0 3px rgba(86, 180, 233, 0.22)" : "0 6px 16px rgba(15, 23, 42, 0.04)",
+    padding: "3px 4px",
+    minHeight: "46px",
+    background: "rgba(255,255,255,0.92)",
+    ":hover": {
+      borderColor: "#0072b2",
+    },
   }),
-
+  placeholder: (base) => ({
+    ...base,
+    color: "#64748b",
+  }),
   multiValue: (base) => ({
     ...base,
-    backgroundColor: "#2b7cd3",
-    borderRadius: 6
+    backgroundColor: "#eff6ff",
+    borderRadius: 8,
+    border: "1px solid rgba(86, 180, 233, 0.3)",
   }),
-
   multiValueLabel: (base) => ({
     ...base,
-    color: "white",
-    fontWeight: 500
+    color: "#0f172a",
+    fontWeight: 600,
   }),
-
   multiValueRemove: (base) => ({
     ...base,
-    color: "white",
+    color: "#475569",
     ":hover": {
-      backgroundColor: "#1f5fa8",
-      color: "white"
-    }
+      backgroundColor: "#56b4e9",
+      color: "#ffffff",
+    },
   }),
-
   menu: (base) => ({
     ...base,
-    borderRadius: 10
+    borderRadius: 14,
+    overflow: "hidden",
   }),
-
   menuPortal: (base) => ({
     ...base,
-    zIndex: 9999
-  })
+    zIndex: 9999,
+  }),
 };

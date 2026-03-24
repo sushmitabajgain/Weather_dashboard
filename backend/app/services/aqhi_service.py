@@ -1,13 +1,16 @@
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.db.session import SessionLocal
 from app.db.models import AQHI
 
 
-def apply_filters(query, year=None, locations=None, dataset_type=None):
+def apply_filters(query, year=None, locations=None, dataset_type=None, last_hours=None):
 
-    # existing filters
-    if year:
+    if last_hours:
+        cutoff = datetime.utcnow() - timedelta(hours=last_hours)
+        query = query.filter(AQHI.datetime >= cutoff)
+    elif year:
         query = query.filter(
             AQHI.datetime.between(f"{year}-01-01", f"{year}-12-31")
         )
@@ -21,25 +24,25 @@ def apply_filters(query, year=None, locations=None, dataset_type=None):
     return query
 
 
-def get_data(year=None, locations=None, dataset_type=None, limit=1000, offset=0):
+def get_data(year=None, locations=None, dataset_type=None, limit=1000, offset=0, last_hours=None):
     db: Session = SessionLocal()
 
     try:
         query = db.query(AQHI)
-        query = apply_filters(query, year, locations, dataset_type)
+        query = apply_filters(query, year, locations, dataset_type, last_hours)
 
-        return query.offset(offset).limit(limit).all()
+        return query.order_by(AQHI.datetime).offset(offset).limit(limit).all()
 
     finally:
         db.close()
 
 
-def get_kpis(year=None, locations=None, dataset_type=None):
+def get_kpis(year=None, locations=None, dataset_type=None, last_hours=None):
     db: Session = SessionLocal()
 
     try:
         query = db.query(AQHI)
-        query = apply_filters(query, year, locations, dataset_type)
+        query = apply_filters(query, year, locations, dataset_type, last_hours)
 
         total = query.count()
 
@@ -59,7 +62,7 @@ def get_kpis(year=None, locations=None, dataset_type=None):
         db.close()
 
 
-def get_hourly_avg(year=None, locations=None, dataset_type=None):
+def get_hourly_avg(year=None, locations=None, dataset_type=None, last_hours=None):
     db = SessionLocal()
     try:
         query = db.query(
@@ -67,7 +70,7 @@ def get_hourly_avg(year=None, locations=None, dataset_type=None):
             func.avg(AQHI.aqhi).label("avg")
         )
 
-        query = apply_filters(query, year, locations, dataset_type)
+        query = apply_filters(query, year, locations, dataset_type, last_hours)
 
         results = query.group_by("hour").order_by("hour").all()
 
@@ -79,7 +82,7 @@ def get_hourly_avg(year=None, locations=None, dataset_type=None):
         db.close()
 
 
-def get_category_distribution(year=None, locations=None, dataset_type=None):
+def get_category_distribution(year=None, locations=None, dataset_type=None, last_hours=None):
     db = SessionLocal()
     try:
         query = db.query(
@@ -87,7 +90,7 @@ def get_category_distribution(year=None, locations=None, dataset_type=None):
             func.count().label("count")
         )
 
-        query = apply_filters(query, year, locations, dataset_type)
+        query = apply_filters(query, year, locations, dataset_type, last_hours)
 
         results = query.group_by(AQHI.category).all()
 
@@ -102,7 +105,7 @@ def get_category_distribution(year=None, locations=None, dataset_type=None):
         db.close()
 
 
-def get_latest_locations(year=None, locations=None, dataset_type=None):
+def get_latest_locations(year=None, locations=None, dataset_type=None, last_hours=None):
     db = SessionLocal()
     try:
         subquery = (
@@ -123,7 +126,7 @@ def get_latest_locations(year=None, locations=None, dataset_type=None):
             )
         )
 
-        query = apply_filters(query, year, locations, dataset_type)
+        query = apply_filters(query, year, locations, dataset_type, last_hours)
 
         results = query.all()
 

@@ -1,52 +1,59 @@
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer
-} from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 const COLORS = {
-  Low: "#2ecc71",
-  Moderate: "#f1c40f",
-  High: "#e67e22",
-  "Very High": "#e74c3c",
-  Unknown: "#9e9e9e"
+  Low: "#009e73",
+  Moderate: "#56b4e9",
+  High: "#e69f00",
+  "Very High": "#cc79a7",
+  Unknown: "#7b8794",
 };
 
 const ALL_CATEGORIES = ["Low", "Moderate", "High", "Very High", "Unknown"];
 
 export default function DonutChart({ data }) {
-
   if (!data) return <p style={{ padding: 20 }}>Loading...</p>;
 
-  // normalize categories
-  const normalized = ALL_CATEGORIES.map(cat => {
-    const found = data.find(d => d.category === cat);
+  const normalized = ALL_CATEGORIES.map((category) => {
+    const found = data.find((item) => item.category === category);
     return {
-      name: cat,
-      value: found ? found.count : 0
+      name: category,
+      value: found ? found.count : 0,
     };
   });
 
-  const total = normalized.reduce((sum, d) => sum + d.value, 0);
+  const total = normalized.reduce((sum, item) => sum + item.value, 0);
+  const dominant = normalized.reduce(
+    (best, item) => (!best || item.value > best.value ? item : best),
+    null
+  );
 
   return (
     <div style={styles.card}>
-
-      {/* TITLE */}
       <div style={styles.header}>
-        <div style={styles.title}>
-          AQHI Category Distribution
-        </div>
+        <div style={styles.title}>AQHI Category Distribution</div>
         <div style={styles.subtitle}>
-          Air quality risk breakdown
+          Each category shows both record count and share of the current selection.
         </div>
       </div>
 
-      {/* CHART */}
-      <div style={styles.chartWrapper}>
+      <div style={styles.summaryRow}>
+        <div style={styles.summaryCard}>
+          <span style={styles.summaryLabel}>Total Records</span>
+          <strong style={styles.summaryValue}>{total}</strong>
+        </div>
+        <div style={styles.summaryCard}>
+          <span style={styles.summaryLabel}>Largest Category</span>
+          <strong style={styles.summaryValue}>{dominant ? dominant.name : "-"}</strong>
+        </div>
+        <div style={styles.summaryCard}>
+          <span style={styles.summaryLabel}>Largest Share</span>
+          <strong style={styles.summaryValue}>
+            {dominant && total ? `${((dominant.value / total) * 100).toFixed(1)}%` : "-"}
+          </strong>
+        </div>
+      </div>
 
+      <div style={styles.chartWrapper}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -55,22 +62,15 @@ export default function DonutChart({ data }) {
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={75}
-              outerRadius={115}
+              innerRadius={74}
+              outerRadius={114}
               paddingAngle={3}
               stroke="none"
             >
-              {normalized.map((entry, index) => (
-                <Cell
-                  key={index}
-                  fill={COLORS[entry.name]}
-                  style={{
-                    transition: "all 0.2s"
-                  }}
-                />
+              {normalized.map((entry) => (
+                <Cell key={entry.name} fill={COLORS[entry.name]} />
               ))}
             </Pie>
-
             <Tooltip
               contentStyle={styles.tooltip}
               formatter={(value, name) => {
@@ -81,121 +81,130 @@ export default function DonutChart({ data }) {
           </PieChart>
         </ResponsiveContainer>
 
-        {/* CENTER KPI */}
         <div style={styles.center}>
           <div style={styles.total}>{total}</div>
           <div style={styles.label}>Total Records</div>
         </div>
-
       </div>
 
-      {/* LEGEND */}
       <div style={styles.legend}>
-        {normalized.map((item, i) => {
-          const percent = total
-            ? ((item.value / total) * 100).toFixed(1)
-            : 0;
-
+        {normalized.map((item) => {
+          const percent = total ? ((item.value / total) * 100).toFixed(1) : 0;
           return (
-            <div key={i} style={styles.legendItem}>
-              <div
-                style={{
-                  ...styles.dot,
-                  background: COLORS[item.name]
-                }}
-              />
-              <span>
-                {item.name}
-                <span style={styles.legendValue}>
-                  {" "} {item.value} ({percent}%)
-                </span>
+            <div key={item.name} style={styles.legendItem}>
+              <div style={{ ...styles.dot, background: COLORS[item.name] }} />
+              <span style={styles.legendLabel}>{item.name}</span>
+              <span style={styles.legendValue}>
+                {item.value} ({percent}%)
               </span>
             </div>
           );
         })}
       </div>
-
     </div>
   );
 }
 
 const styles = {
   card: {
-    background: "rgba(255,255,255,0.75)",
-    backdropFilter: "blur(10px)",
-    borderRadius: 18,
-    padding: 18,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.08)"
+    background: "transparent",
   },
-
   header: {
-    marginBottom: 10
+    marginBottom: 10,
   },
-
   title: {
-    fontSize: 16,
-    fontWeight: 600,
-    color: "#1f2d3d"
+    fontSize: 18,
+    fontWeight: 700,
+    color: "#0f172a",
   },
-
   subtitle: {
     fontSize: 13,
-    color: "#6b7c93"
+    color: "#64748b",
+    marginTop: 6,
   },
-
+  summaryRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: 10,
+    marginBottom: 14,
+  },
+  summaryCard: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    padding: "10px 12px",
+    borderRadius: 14,
+    background: "linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(239, 246, 255, 0.88))",
+    border: "1px solid rgba(148, 163, 184, 0.18)",
+  },
+  summaryLabel: {
+    fontSize: 11,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#64748b",
+    fontWeight: 700,
+  },
+  summaryValue: {
+    color: "#0f172a",
+    fontWeight: 700,
+    fontSize: 14,
+  },
   chartWrapper: {
     position: "relative",
-    height: 320
+    height: 320,
   },
-
   center: {
     position: "absolute",
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    textAlign: "center"
+    textAlign: "center",
   },
-
   total: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 700,
-    color: "#1f2d3d"
+    color: "#0f172a",
   },
-
   label: {
     fontSize: 12,
-    color: "#7b8794"
+    color: "#64748b",
   },
-
   legend: {
-    display: "flex",
-    justifyContent: "center",
-    gap: 14,
-    flexWrap: "wrap",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+    gap: 10,
     marginTop: 12,
-    fontSize: 13
+    fontSize: 13,
   },
-
   legendItem: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "12px 1fr auto",
     alignItems: "center",
-    gap: 6
+    columnGap: 10,
+    rowGap: 2,
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: "#f8fafc",
+    border: "1px solid rgba(148, 163, 184, 0.18)",
   },
-
+  legendLabel: {
+    color: "#0f172a",
+    fontWeight: 600,
+  },
   legendValue: {
-    color: "#7b8794",
-    fontSize: 12
+    color: "#64748b",
+    marginLeft: "auto",
+    fontSize: 12,
   },
-
   dot: {
     width: 10,
     height: 10,
-    borderRadius: "50%"
+    borderRadius: "50%",
   },
-
   tooltip: {
-    borderRadius: 10,
-    border: "none",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-  }
+    borderRadius: 12,
+    border: "1px solid rgba(148, 163, 184, 0.22)",
+    background: "rgba(255,255,255,0.96)",
+    boxShadow: "0 12px 24px rgba(15, 23, 42, 0.12)",
+  },
 };

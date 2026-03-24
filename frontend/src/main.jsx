@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import "./index.css";
 
 import {
   ApolloClient,
@@ -11,7 +12,7 @@ import {
 
 const client = new ApolloClient({
   link: new HttpLink({
-    uri: "http://localhost:8000/graphql",
+    uri: import.meta.env.VITE_API_URL,
   }),
   cache: new InMemoryCache(),
 });

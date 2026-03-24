@@ -5,3 +5,9 @@ psycopg2-binary
 pandas
 strawberry-graphql
 python-dotenv
+langchain
+langchain-groq
+langchain-community
+langgraph
+requests
+apscheduler

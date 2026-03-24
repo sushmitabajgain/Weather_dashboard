@@ -64,7 +64,7 @@ pip install -r requirements.txt
 Load dataset into database:
 
 ```
-python load-data.py
+python load_data.py
 ```
 
 Run backend server:

@@ -5,6 +5,7 @@ export const GET_AQHI = gql`
     $year: Int,
     $locations: [String!],
     $datasetType: String,
+    $lastHours: Int,
     $limit: Int,
     $offset: Int
   ) {
@@ -12,6 +13,7 @@ export const GET_AQHI = gql`
       year: $year,
       locations: $locations,
       datasetType: $datasetType,
+      lastHours: $lastHours,
       limit: $limit,
       offset: $offset
     ) {
@@ -30,12 +32,14 @@ export const GET_KPIS = gql`
   query GetKPIS(
     $year: Int,
     $locations: [String!],
-    $datasetType: String
+    $datasetType: String,
+    $lastHours: Int
   ) {
     kpis(
       year: $year,
       locations: $locations,
-      datasetType: $datasetType
+      datasetType: $datasetType,
+      lastHours: $lastHours
     ) {
       total
       avg
@@ -49,12 +53,14 @@ export const GET_HOURLY = gql`
   query GetHourly(
     $year: Int,
     $locations: [String!],
-    $datasetType: String
+    $datasetType: String,
+    $lastHours: Int
   ) {
     hourlyAvg(
       year: $year,
       locations: $locations,
-      datasetType: $datasetType
+      datasetType: $datasetType,
+      lastHours: $lastHours
     ) {
       hour
       avg
@@ -66,12 +72,14 @@ export const GET_CATEGORY = gql`
   query GetCategory(
     $year: Int,
     $locations: [String!],
-    $datasetType: String
+    $datasetType: String,
+    $lastHours: Int
   ) {
     categoryDistribution(
       year: $year,
       locations: $locations,
-      datasetType: $datasetType
+      datasetType: $datasetType,
+      lastHours: $lastHours
     ) {
       category
       count
@@ -83,12 +91,14 @@ export const GET_MAP = gql`
   query GetMap(
     $year: Int,
     $locations: [String!],
-    $datasetType: String
+    $datasetType: String,
+    $lastHours: Int
   ) {
     mapPoints(
       year: $year,
       locations: $locations,
-      datasetType: $datasetType
+      datasetType: $datasetType,
+      lastHours: $lastHours
     ) {
       locationName
       latitude

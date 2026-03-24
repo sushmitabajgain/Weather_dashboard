@@ -59,11 +59,12 @@ class Query:
         year: Optional[int] = None,
         locations: Optional[List[str]] = None,
         dataset_type: Optional[str] = None,
+        last_hours: Optional[int] = None,
         limit: int = 1000,
         offset: int = 0
     ) -> List[AQHIType]:
 
-        result = get_data(year, locations, dataset_type, limit, offset)
+        result = get_data(year, locations, dataset_type, limit, offset, last_hours)
 
         return [
             AQHIType(
@@ -84,10 +85,11 @@ class Query:
         self,
         year: Optional[int] = None,
         locations: Optional[List[str]] = None,
-        dataset_type: Optional[str] = None
+        dataset_type: Optional[str] = None,
+        last_hours: Optional[int] = None
     ) -> KPIType:
 
-        data = get_kpis(year, locations, dataset_type)
+        data = get_kpis(year, locations, dataset_type, last_hours)
 
         return KPIType(**data)
 
@@ -96,10 +98,11 @@ class Query:
         self,
         year: Optional[int] = None,
         locations: Optional[List[str]] = None,
-        dataset_type: Optional[str] = None
+        dataset_type: Optional[str] = None,
+        last_hours: Optional[int] = None
     ) -> List[HourlyType]:
 
-        result = get_hourly_avg(year, locations, dataset_type)
+        result = get_hourly_avg(year, locations, dataset_type, last_hours)
 
         return [
             HourlyType(
@@ -115,10 +118,11 @@ class Query:
         self,
         year: Optional[int] = None,
         locations: Optional[List[str]] = None,
-        dataset_type: Optional[str] = None
+        dataset_type: Optional[str] = None,
+        last_hours: Optional[int] = None
     ) -> List[CategoryType]:
 
-        result = get_category_distribution(year, locations, dataset_type)
+        result = get_category_distribution(year, locations, dataset_type, last_hours)
 
         return [
             CategoryType(
@@ -133,10 +137,11 @@ class Query:
         self,
         year: Optional[int] = None,
         locations: Optional[List[str]] = None,
-        dataset_type: Optional[str] = None
+        dataset_type: Optional[str] = None,
+        last_hours: Optional[int] = None
     ) -> List[MapPointType]:
 
-        result = get_latest_locations(year, locations, dataset_type)
+        result = get_latest_locations(year, locations, dataset_type, last_hours)
 
         return [
             MapPointType(**r)
@@ -150,7 +155,12 @@ class Query:
 
         db = SessionLocal()
 
-        result = db.query(AQHI.location_name).distinct().all()
+        result = (
+            db.query(AQHI.location_name)
+            .distinct()
+            .order_by(AQHI.location_name)
+            .all()
+        )
 
         return [r[0] for r in result]
         

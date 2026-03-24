@@ -1,12 +1,16 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Dashboard from "./pages/Dashboard";
+
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-      </Routes>
+      <Suspense fallback={<div style={{ padding: 20 }}>Loading dashboard...</div>}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

@@ -1,369 +1,667 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@apollo/client";
 
 import {
   GET_AQHI,
-  GET_KPIS,
-  GET_HOURLY,
   GET_CATEGORY,
-  GET_MAP
+  GET_HOURLY,
+  GET_KPIS,
+  GET_MAP,
 } from "../graphql/queries";
 
+import ChatPanel from "../components/ChatPanel";
+import DataTable from "../components/DataTable";
+import DonutChart from "../components/DonutChart";
 import Filters from "../components/Filters";
+import HourlyChart from "../components/HourlyChart";
 import KPI from "../components/KPI";
 import LineChart from "../components/LineChart";
-import DonutChart from "../components/DonutChart";
-import HourlyChart from "../components/HourlyChart";
 import MapView from "../components/MapView";
-import DataTable from "../components/DataTable";
+
+const RESPONSIVE_STYLE_ID = "dashboard-responsive-styles";
+
+const RESPONSIVE_CSS = `
+  @keyframes dash-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .dash-page {
+    min-height: 100vh;
+  }
+
+  .dash-header-content,
+  .dash-header-stats,
+  .dash-tabs,
+  .dash-kpi-row,
+  .dash-row,
+  .dash-hero-grid {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .dash-card,
+  .dash-panel,
+  .dash-tab,
+  .dash-refresh-btn,
+  .dash-stat-box {
+    transition: transform 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
+  }
+
+  .dash-card:hover,
+  .dash-panel:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.1);
+  }
+
+  .dash-tab:hover {
+    transform: translateY(-1px);
+  }
+
+  .dash-refresh-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .dash-spinner {
+    display: inline-block;
+  }
+
+  .dash-spinner.is-spinning {
+    animation: dash-spin 1s linear infinite;
+  }
+
+  @media (max-width: 1160px) {
+    .dash-panel {
+      flex: 1 1 100% !important;
+      min-width: 100% !important;
+    }
+  }
+
+  @media (max-width: 820px) {
+    .dash-header-content {
+      flex-direction: column;
+      align-items: flex-start !important;
+      justify-content: flex-start !important;
+    }
+
+    .dash-header-stats {
+      width: 100%;
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dash-kpi-wrap {
+      flex: 1 1 calc(50% - 8px) !important;
+      min-width: 170px !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .dash-header {
+      padding: 8px 10px 8px !important;
+    }
+
+    .dash-header-content {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      align-items: start !important;
+      justify-content: start !important;
+      gap: 10px !important;
+    }
+
+    .dash-title-block {
+      width: 100% !important;
+      flex: none !important;
+      max-width: none !important;
+    }
+
+    .dash-container {
+      padding: 0 10px 24px !important;
+    }
+
+    .dash-title {
+      font-size: 1.25rem !important;
+    }
+
+    .dash-card,
+    .dash-panel {
+      padding: 14px !important;
+      border-radius: 18px !important;
+    }
+
+    .dash-tab,
+    .dash-kpi-wrap {
+      flex: 1 1 100% !important;
+    }
+
+    .dash-header-stats {
+      width: 100% !important;
+      gap: 8px !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .dash-refresh-wrap {
+      grid-column: 1 / -1 !important;
+      width: 100% !important;
+    }
+
+    .dash-refresh-btn {
+      width: 100% !important;
+      justify-content: center !important;
+    }
+
+    .dash-hero-grid {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      align-items: stretch !important;
+      gap: 10px !important;
+    }
+
+    .dash-hero-copy {
+      max-width: none !important;
+    }
+
+    .dash-filter-container {
+      width: 100% !important;
+    }
+
+    .dash-tabs {
+      gap: 8px !important;
+    }
+
+    .dash-row,
+    .dash-kpi-row {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 10px !important;
+    }
+
+    .dash-kpi-wrap {
+      min-width: 0 !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .dash-container {
+      padding: 0 8px 20px !important;
+    }
+
+    .dash-header-content {
+      padding: 10px !important;
+      border-radius: 18px !important;
+      gap: 8px !important;
+    }
+
+    .dash-title {
+      font-size: 1.15rem !important;
+    }
+
+    .dash-panel {
+      padding: 12px !important;
+    }
+
+    .dash-card {
+      padding: 12px !important;
+    }
+
+    .dash-hero-card {
+      padding: 10px !important;
+    }
+
+    .dash-subtitle,
+    .dash-eyebrow {
+      display: none !important;
+    }
+
+    .dash-header-stats {
+      gap: 8px !important;
+      grid-template-columns: 1fr 1fr !important;
+    }
+
+    .dash-stat-box {
+      padding: 7px 9px !important;
+      min-width: 0 !important;
+    }
+
+    .dash-refresh-btn {
+      padding: 8px 10px !important;
+      font-size: 11px !important;
+    }
+
+    .dash-section-title {
+      font-size: 16px !important;
+    }
+
+    .dash-section-body {
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+    }
+  }
+`;
+
+const TIME_PRESETS = {
+  "24h": { lastHours: 24, year: null },
+  "48h": { lastHours: 48, year: null },
+  "7d": { lastHours: 168, year: null },
+  year: { lastHours: null, year: 2026 },
+};
+
+const KPI_COLORS = ["#0072b2", "#009e73", "#e69f00", "#cc79a7"];
 
 export default function Dashboard() {
-  const [year, setYear] = useState(2026);
+  const [timeRange, setTimeRange] = useState("24h");
   const [locations, setLocations] = useState([]);
   const [datasetType, setDatasetType] = useState("Forecast");
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  useEffect(() => {
+    let styleTag = document.getElementById(RESPONSIVE_STYLE_ID);
+    if (!styleTag) {
+      styleTag = document.createElement("style");
+      styleTag.id = RESPONSIVE_STYLE_ID;
+      styleTag.textContent = RESPONSIVE_CSS;
+      document.head.appendChild(styleTag);
+    }
+
+    return () => {
+      styleTag?.remove();
+    };
+  }, []);
+
+  const { lastHours, year } = TIME_PRESETS[timeRange] || TIME_PRESETS["24h"];
 
   const variables = {
     year,
-    locations: locations.length ? locations.map(l => l.value) : [],
+    lastHours,
+    locations: locations.length ? locations.map((location) => location.value) : [],
     datasetType,
-    limit: 200,
-    offset: 0
+    limit: 500,
+    offset: 0,
   };
 
-  const { data, loading, error } = useQuery(GET_AQHI, { variables });
-  const { data: kpiData } = useQuery(GET_KPIS, { variables });
-  const { data: hourlyData } = useQuery(GET_HOURLY, { variables });
-  const { data: categoryData } = useQuery(GET_CATEGORY, { variables });
-  const { data: mapData } = useQuery(GET_MAP, { variables });
+  const { data, loading, error, refetch: refetchAqhi } = useQuery(GET_AQHI, { variables });
+  const { data: kpiData, refetch: refetchKpis } = useQuery(GET_KPIS, { variables });
+  const { data: hourlyData, refetch: refetchHourly } = useQuery(GET_HOURLY, { variables });
+  const { data: categoryData, refetch: refetchCategory } = useQuery(GET_CATEGORY, { variables });
+  const { data: mapData, refetch: refetchMap } = useQuery(GET_MAP, { variables });
 
-  if (loading) return <p style={{ padding: 20 }}>Loading...</p>;
-  if (error) return <p>Error: {error.message}</p>;
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/data/refresh`, {
+        method: "POST",
+      });
+      const payload = await response.json();
+      if (payload.last_refresh) {
+        setLastUpdated(new Date(payload.last_refresh));
+      }
+      await Promise.all([
+        refetchAqhi(),
+        refetchKpis(),
+        refetchHourly(),
+        refetchCategory(),
+        refetchMap(),
+      ]);
+    } catch (refreshError) {
+      console.error("Refresh failed:", refreshError);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchAqhi, refetchCategory, refetchHourly, refetchKpis, refetchMap]);
+
+  if (loading) {
+    return <p style={{ padding: 20 }}>Loading...</p>;
+  }
+
+  if (error) {
+    return <p style={{ padding: 20 }}>Error: {error.message}</p>;
+  }
 
   const aqhi = data?.aqhiData || [];
   const kpis = kpiData?.kpis || {};
   const hourly = hourlyData?.hourlyAvg || [];
   const category = categoryData?.categoryDistribution || [];
   const mapPoints = mapData?.mapPoints || [];
+  const todayLabel = new Date().toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const latestRecordTime = aqhi.reduce((latest, item) => {
+    if (!item?.datetime) return latest;
+    const parsed = new Date(item.datetime);
+    if (Number.isNaN(parsed.getTime())) return latest;
+    return !latest || parsed > latest ? parsed : latest;
+  }, null);
+  const loadedAt = latestRecordTime || lastUpdated;
+  const loadedAtLabel = loadedAt
+    ? loadedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "Unavailable";
+
+  const heroStats = [
+    { value: todayLabel, label: "Today" },
+    { value: loadedAtLabel, label: "Data Loaded" },
+    {
+      value: datasetType,
+      label: "Dataset",
+    },
+    { value: `${locations.length || "All"}`, label: "Locations" },
+  ];
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerContent}>
-          
-          <div>
-            <h1 style={styles.title}>AQHI Dashboard</h1>
-            <p style={styles.subtitle}>
-              Real-time Air Quality Health Index monitoring across Canada
+    <div className="dash-page" style={styles.page}>
+      <header className="dash-header" style={styles.header}>
+        <div className="dash-header-content" style={styles.headerContent}>
+          <div className="dash-title-block" style={styles.titleBlock}>
+            <div className="dash-eyebrow" style={styles.eyebrow}>Canadian Air Quality Health Index</div>
+            <h1 className="dash-title" style={styles.title}>
+              AQHI Dashboard
+            </h1>
+            <p className="dash-subtitle" style={styles.subtitle}>
+              Compare current conditions, trends, and station context across Canada.
             </p>
           </div>
 
-          <div style={styles.headerStats}>
-            {[
-              { value: "Live", label: "Status" },
-              { value: new Date(), label: "Date", isDate: true },
-              { value: "AQHI", label: "System" }
-            ].map((item, i) => {
-              const colors = [
-                "rgba(46, 204, 113, 0.3)", // green
-                "rgba(241, 196, 15, 0.3)", // yellow
-                "rgba(231, 76, 60, 0.3)"   // red
-              ];
+          <div className="dash-header-stats" style={styles.headerStats}>
+            <div style={styles.refreshWrap}>
+              <button
+                className="dash-refresh-btn"
+                disabled={refreshing}
+                onClick={handleRefresh}
+                style={{
+                  ...styles.refreshBtn,
+                  opacity: refreshing ? 0.72 : 1,
+                }}
+              >
+                <span className={`dash-spinner${refreshing ? " is-spinning" : ""}`}>o</span>
+                {refreshing ? " Refreshing..." : " Refresh Live Data"}
+              </button>
+            </div>
 
-              return (
-                <div
-                  key={i}
-                  style={styles.statBox}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = "translateY(-4px) scale(1.05)";
-                    e.currentTarget.style.boxShadow = "0 12px 30px rgba(0,0,0,0.35)";
-                    e.currentTarget.style.background = colors[i];
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = "translateY(0) scale(1)";
-                    e.currentTarget.style.boxShadow = "none";
-                    e.currentTarget.style.background = styles.statBox.background;
-                  }}
-                >
-                  <div style={styles.statValue}>
-                    {item.isDate
-                      ? item.value.toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric"
-                        })
-                      : item.value}
-                  </div>
-
-                  <div style={styles.statLabel}>{item.label}</div>
-                </div>
-              );
-            })}
+            {heroStats.map((item) => (
+              <div key={item.label} className="dash-stat-box" style={styles.statBox}>
+                <div style={styles.statValue}>{item.value}</div>
+                <div style={styles.statLabel}>{item.label}</div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </header>
 
-      <div style={styles.container}>
-        <div
-          style={styles.card}
-          onMouseEnter={e => {
-            e.currentTarget.style.boxShadow = "0 16px 40px rgba(0,0,0,0.12)";
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.boxShadow = styles.card.boxShadow;
-          }}
-        >
-          <h3 style={styles.sectionTitle}>Dashboard Filters</h3>
-
-          <div style={styles.flexWrap}>
-            <Filters
-              year={year}
-              setYear={setYear}
-              locations={locations}
-              setLocations={setLocations}
-            />
+      <main className="dash-container" style={styles.container}>
+        <section className="dash-card dash-hero-card" style={styles.heroCard}>
+          <div className="dash-hero-grid" style={styles.heroGrid}>
+            <div className="dash-hero-copy" style={styles.heroCopy}>
+              <h2 className="dash-section-title" style={styles.sectionTitle}>Explore the current selection</h2>
+              <p className="dash-section-body" style={styles.sectionBody}>
+                Filters, dataset mode, and charts all stay synchronized so the
+                dashboard tells one consistent story.
+              </p>
+            </div>
+            <div className="dash-filter-container">
+              <Filters
+                locations={locations}
+                setLocations={setLocations}
+                setTimeRange={setTimeRange}
+                timeRange={timeRange}
+              />
+            </div>
           </div>
+        </section>
+
+        <div className="dash-tabs" style={styles.tabs}>
+          {["Forecast", "Observation"].map((tab) => {
+            const active = datasetType === tab;
+            return (
+              <button
+                key={tab}
+                className="dash-tab"
+                onClick={() => setDatasetType(tab)}
+                style={{
+                  ...styles.tab,
+                  ...(active ? styles.tabActive : null),
+                }}
+              >
+                {tab}
+              </button>
+            );
+          })}
         </div>
 
-        <div style={styles.tabs}>
-          {["Forecast", "Observation"].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setDatasetType(tab)}
-              style={{
-                ...styles.tab,
-                background: datasetType === tab ? "#2b7cd3" : "#fff",
-                color: datasetType === tab ? "#fff" : "#333",
-                transform: datasetType === tab ? "scale(1.05)" : "scale(1)"
-              }}
-            >
-              {tab}
-            </button>
+        <div className="dash-kpi-row" style={styles.kpiRow}>
+          {[
+            { title: "Total Records", value: kpis.total || 0 },
+            { title: "Average AQHI", value: kpis.avg || 0 },
+            { title: "Maximum AQHI", value: kpis.max || 0 },
+            { title: "Locations", value: kpis.locations || 0 },
+          ].map((item, index) => (
+            <div key={item.title} className="dash-kpi-wrap" style={styles.kpiWrap}>
+              <KPI title={item.title} value={item.value} color={KPI_COLORS[index]} />
+            </div>
           ))}
         </div>
 
-        <div style={styles.kpiRow}>
-          <div style={styles.kpiWrap}>
-            <KPI title="Total Records" value={kpis.total || 0} color="#2b7cd3" />
-          </div>
-          <div style={styles.kpiWrap}>
-            <KPI title="Average AQHI" value={kpis.avg || 0} color="#27ae60" />
-          </div>
-          <div style={styles.kpiWrap}>
-            <KPI title="Maximum AQHI" value={kpis.max || 0} color="#e67e22" />
-          </div>
-          <div style={styles.kpiWrap}>
-            <KPI title="Locations" value={kpis.locations || 0} color="#8e44ad" />
-          </div>
-        </div>
-
-        <div style={styles.row}>
-          <div
-            style={styles.chartCard}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = "translateY(-4px)";
-              e.currentTarget.style.boxShadow = "0 18px 40px rgba(0,0,0,0.12)";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = styles.chartCard.boxShadow;
-            }}
-          >
+        <div className="dash-row" style={styles.row}>
+          <section className="dash-panel" style={styles.panel}>
             <LineChart data={aqhi} />
-          </div>
-
-          <div
-            style={styles.chartCard}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = "translateY(-4px)";
-              e.currentTarget.style.boxShadow = "0 18px 40px rgba(0,0,0,0.12)";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = styles.chartCard.boxShadow;
-            }}
-          >
+          </section>
+          <section className="dash-panel" style={styles.panel}>
             <DonutChart data={category} />
-          </div>
+          </section>
         </div>
 
-        <div style={styles.row}>
-          <div
-            style={styles.chartCard}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = "translateY(-4px)";
-              e.currentTarget.style.boxShadow = "0 18px 40px rgba(0,0,0,0.12)";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = styles.chartCard.boxShadow;
-            }}
-          >
+        <div className="dash-row" style={styles.row}>
+          <section className="dash-panel" style={styles.panel}>
             <HourlyChart data={hourly} />
-          </div>
-
-          <div
-            style={styles.chartCard}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = "translateY(-4px)";
-              e.currentTarget.style.boxShadow = "0 18px 40px rgba(0,0,0,0.12)";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = styles.chartCard.boxShadow;
-            }}
-          >
+          </section>
+          <section className="dash-panel" style={styles.panel}>
             <MapView data={mapPoints} />
-          </div>
+          </section>
         </div>
 
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>Data Preview</h3>
+        <section className="dash-card" style={styles.tableCard}>
+          <div style={styles.tableHeader}>
+            <div>
+              <h2 style={styles.sectionTitle}>Data Preview</h2>
+              <p style={styles.sectionBody}>
+                Search, skim risk level, and verify timestamps for the current
+                dashboard slice.
+              </p>
+            </div>
+          </div>
           <DataTable data={aqhi} />
-        </div>
-      </div>
+        </section>
+      </main>
+
+      <ChatPanel />
     </div>
   );
 }
 
 const styles = {
   page: {
-    background: "linear-gradient(135deg, #eef2f7, #f8fbff)",
-    minHeight: "100vh",
-    fontFamily: "Inter, sans-serif"
+    background:
+      "radial-gradient(circle at top left, rgba(186, 230, 253, 0.8), transparent 30%), radial-gradient(circle at top right, rgba(167, 243, 208, 0.55), transparent 26%), linear-gradient(180deg, #f8fbff 0%, #eef6ff 44%, #f5fbf8 100%)",
+    color: "#0f172a",
+    fontFamily: "\"Segoe UI\", sans-serif",
   },
-
   header: {
-    background: "linear-gradient(135deg, #0f2027, #1f4068, #2c5364)",
-    padding: "28px 20px",
-    color: "white",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.25)"
+    padding: "12px 14px 10px",
   },
-
   headerContent: {
     maxWidth: "1400px",
+    width: "100%",
+    boxSizing: "border-box",
     margin: "0 auto",
-    display: "flex",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 20
+    gap: 12,
+    background: "rgba(255, 255, 255, 0.8)",
+    border: "1px solid rgba(148, 163, 184, 0.22)",
+    borderRadius: 24,
+    padding: 18,
+    boxShadow: "0 12px 24px rgba(15, 23, 42, 0.08)",
+    backdropFilter: "blur(12px)",
   },
-
+  titleBlock: {
+    flex: "1 1 420px",
+  },
+  eyebrow: {
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: "0.18em",
+    color: "#0369a1",
+    marginBottom: 6,
+    fontWeight: 700,
+  },
   title: {
     margin: 0,
-    fontSize: "2.3rem",
-    fontWeight: 700,
-    letterSpacing: "0.4px"
+    fontSize: "1.6rem",
+    lineHeight: 1.02,
+    maxWidth: "12ch",
   },
-
   subtitle: {
     marginTop: 6,
-    fontSize: 14,
-    color: "#dbe9ff"
+    maxWidth: "52ch",
+    fontSize: 13,
+    lineHeight: 1.45,
+    color: "#475569",
   },
-
   headerStats: {
+    gap: 8,
+    alignItems: "stretch",
+    justifyContent: "flex-end",
+    flex: "1 1 460px",
+  },
+  refreshWrap: {
     display: "flex",
-    gap: 12,
-    flexWrap: "wrap"
+    alignItems: "stretch",
   },
-
+  refreshBtn: {
+    background: "linear-gradient(135deg, #0072b2, #009e73)",
+    border: "none",
+    borderRadius: 14,
+    color: "#ffffff",
+    padding: "9px 12px",
+    cursor: "pointer",
+    fontSize: 12,
+    fontWeight: 700,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    boxShadow: "0 10px 20px rgba(0, 114, 178, 0.18)",
+  },
   statBox: {
-    background: "rgba(255,255,255,0.18)",
-    padding: "10px 16px",
+    minWidth: 96,
+    padding: "8px 10px",
     borderRadius: 12,
-    backdropFilter: "blur(8px)",
-    textAlign: "center",
-    minWidth: 90,
-    border: "1px solid rgba(255,255,255,0.25)",
-    transition: "all 0.25s ease",
-    cursor: "pointer"
+    background: "rgba(239, 246, 255, 0.85)",
+    border: "1px solid rgba(147, 197, 253, 0.3)",
+    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
+    flex: "1 1 96px",
   },
-
   statValue: {
-    fontSize: 15,
-    fontWeight: 600
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#0f172a",
+    lineHeight: 1.35,
   },
-
   statLabel: {
-    fontSize: 11,
-    color: "#e3ecf7"
+    fontSize: 9,
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    color: "#64748b",
+    marginTop: 2,
   },
-
   container: {
     maxWidth: "1400px",
-    margin: "26px auto",
-    padding: "0 14px"
+    margin: "0 auto",
+    padding: "0 14px 32px",
   },
-
-  card: {
-    background: "rgba(255,255,255,0.85)",
-    backdropFilter: "blur(14px)",
-    borderRadius: 22,
-    padding: 24,
-    boxShadow: "0 14px 40px rgba(0,0,0,0.08)",
-    border: "1px solid rgba(255,255,255,0.5)",
-    marginBottom: 24,
-    transition: "0.25s"
+  heroCard: {
+    background: "rgba(255, 255, 255, 0.82)",
+    borderRadius: 24,
+    padding: 18,
+    border: "1px solid rgba(148, 163, 184, 0.2)",
+    boxShadow: "0 16px 38px rgba(15, 23, 42, 0.08)",
+    backdropFilter: "blur(12px)",
+    marginBottom: 18,
   },
-
+  heroGrid: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+    gap: 18,
+    alignItems: "stretch",
+  },
+  heroCopy: {
+    flex: "1 1 320px",
+    maxWidth: 440,
+  },
   sectionTitle: {
-    marginBottom: 14,
-    fontWeight: 600,
-    fontSize: 16,
-    color: "#333"
+    margin: 0,
+    fontSize: 18,
+    fontWeight: 700,
+    color: "#0f172a",
   },
-
-  flexWrap: {
-    display: "flex",
-    gap: 16,
-    flexWrap: "wrap"
+  sectionBody: {
+    marginTop: 8,
+    color: "#475569",
+    fontSize: 14,
+    lineHeight: 1.65,
   },
-
   tabs: {
-    display: "flex",
     gap: 10,
-    marginBottom: 20,
-    flexWrap: "wrap"
+    marginBottom: 18,
   },
-
   tab: {
     padding: "10px 18px",
     borderRadius: 999,
-    border: "1px solid #dbe2ea",
+    border: "1px solid rgba(148, 163, 184, 0.28)",
     cursor: "pointer",
-    fontWeight: 500,
-    background: "#fff",
-    transition: "all 0.2s ease",
-    boxShadow: "0 3px 8px rgba(0,0,0,0.06)"
+    fontWeight: 700,
+    background: "rgba(255, 255, 255, 0.78)",
+    color: "#334155",
+    boxShadow: "0 8px 18px rgba(15, 23, 42, 0.04)",
   },
-
+  tabActive: {
+    background: "linear-gradient(135deg, #0072b2, #009e73)",
+    color: "#ffffff",
+    borderColor: "transparent",
+    boxShadow: "0 10px 20px rgba(0, 114, 178, 0.16)",
+  },
   kpiRow: {
-    display: "flex",
-    gap: 18,
-    flexWrap: "wrap",
-    marginBottom: 20
+    gap: 16,
+    marginBottom: 18,
   },
-
   kpiWrap: {
-    flex: "1 1 200px",
-    transition: "0.2s"
+    flex: "1 1 220px",
   },
-
   row: {
-    display: "flex",
-    gap: 22,
-    flexWrap: "wrap",
-    marginBottom: 20
+    gap: 18,
+    marginBottom: 18,
   },
-
-  chartCard: {
+  panel: {
     flex: "1 1 420px",
     minWidth: 280,
-    background: "rgba(255,255,255,0.9)",
-    borderRadius: 22,
+    background: "rgba(255, 255, 255, 0.84)",
+    borderRadius: 24,
     padding: 18,
-    boxShadow: "0 14px 35px rgba(0,0,0,0.08)",
-    transition: "0.25s"
-  }
+    border: "1px solid rgba(148, 163, 184, 0.2)",
+    boxShadow: "0 16px 36px rgba(15, 23, 42, 0.08)",
+    backdropFilter: "blur(12px)",
+  },
+  tableCard: {
+    background: "rgba(255, 255, 255, 0.84)",
+    borderRadius: 24,
+    padding: 20,
+    border: "1px solid rgba(148, 163, 184, 0.2)",
+    boxShadow: "0 16px 36px rgba(15, 23, 42, 0.08)",
+    backdropFilter: "blur(12px)",
+  },
+  tableHeader: {
+    marginBottom: 12,
+  },
 };
