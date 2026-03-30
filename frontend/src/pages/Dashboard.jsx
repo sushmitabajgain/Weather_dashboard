@@ -290,7 +290,8 @@ export default function Dashboard() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/data/refresh`, {
+      const baseUrl = import.meta.env.VITE_BASE_URL || "";
+      const response = await fetch(`${baseUrl}/data/refresh`, {
         method: "POST",
       });
       const payload = await response.json();

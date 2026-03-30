@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const AGENT_URL = import.meta.env.VITE_AGENT_URL || "http://localhost:8000/agent/chat";
+const AGENT_URL = import.meta.env.VITE_AGENT_URL || "/agent/chat";
 
 const SUGGESTIONS = [
   "Which location had the highest average AQHI?",

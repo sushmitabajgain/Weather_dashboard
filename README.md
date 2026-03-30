@@ -1,136 +1,146 @@
-# AQHI Visualization Dashboard
+# AQHI Weather Dashboard
 
-A full-stack web-based visualization system for analyzing Air Quality Health Index (AQHI) data across Canada. The system enables interactive exploration of temporal, spatial, and categorical air quality patterns.
+A full-stack dashboard for exploring Canadian Air Quality Health Index data with charts, maps, filters, and a built-in AQHI assistant.
 
----
+## What The App Does
 
-## Features
+- shows AQHI trends over time
+- compares forecast and observation data
+- summarizes AQHI with KPI cards
+- maps latest station readings across Canada
+- highlights category distribution and hourly averages
+- lets users ask natural-language questions through the AQHI assistant
 
-- Interactive AQHI trend analysis
-- Category distribution visualization
-- Hourly variation analysis
-- Geospatial AQHI mapping
-- Dynamic filtering (location, year, dataset type)
-- Client-server architecture with GraphQL APIs
+## Data Used
 
----
+This project works with two AQHI data sources:
 
-## Tech Stack
+1. Static CSV seed files in `backend/data/`
+2. Live ECCC GeoMet AQHI feeds pulled by the backend refresh service
+
+AQHI categories used across the app:
+
+- `Low`: `<= 3`
+- `Moderate`: `4-6`
+- `High`: `7-10`
+- `Very High`: `> 10`
+
+## Stack
 
 ### Backend
-- Python (FastAPI)
-- GraphQL (Strawberry)
+
+- FastAPI
+- Strawberry GraphQL
+- SQLAlchemy
 - PostgreSQL
 - Pandas
-- SQLAlchemy
+- APScheduler
+- LangChain + Groq for the AQHI assistant
 
 ### Frontend
-- React.js
+
+- React
+- Vite
+- Apollo Client
 - Recharts
-- Mapbox
+- MapLibre GL via `react-map-gl`
+- React Select
 
----
+## Project Structure
 
-## System Requirements
+### Backend
 
-Ensure the following versions are installed:
+- `backend/main.py`: FastAPI entrypoint
+- `backend/app/graphql/schema.py`: GraphQL schema
+- `backend/app/services/aqhi_service.py`: dashboard query logic
+- `backend/app/services/live_data.py`: live AQHI refresh from ECCC
+- `backend/app/agent/agent.py`: AQHI SQL agent setup
+- `backend/app/agent/router.py`: `/agent/chat` endpoint
+- `backend/load_data.py`: one-time CSV seed loader
 
-| Tool        | Version (Recommended) |
-|------------|----------------------|
-| Python     | 3.10+                |
-| pip        | 22+                  |
-| Node.js    | 18+                  |
-| npm        | 9+                   |
-| PostgreSQL | 14+                  |
+### Frontend
 
----
+- `frontend/src/pages/Dashboard.jsx`: main dashboard page
+- `frontend/src/components/LineChart.jsx`: AQHI trend chart
+- `frontend/src/components/DonutChart.jsx`: AQHI category distribution
+- `frontend/src/components/HourlyChart.jsx`: hourly AQHI view
+- `frontend/src/components/MapView.jsx`: AQHI station map
+- `frontend/src/components/DataTable.jsx`: searchable AQHI table
+- `frontend/src/components/ChatPanel.jsx`: AQHI assistant UI
 
-## Setup Instructions
+## Local Setup
 
-### 1. Database Setup
-
-Install PostgreSQL and create a database:
+### 1. Create The Database
 
 ```sql
 CREATE DATABASE aqhi_db;
 ```
 
 ### 2. Backend Setup
-```
+
+```powershell
 cd backend
 pip install -r requirements.txt
-```
-
-Load dataset into database:
-
-```
 python load_data.py
-```
-
-Run backend server:
-
-```
 uvicorn main:app --reload
 ```
 
+Backend runs at `http://localhost:8000`
+
 ### 3. Frontend Setup
 
-For frontend server:
-```
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-### 4. Backend Environment Configuration
+Frontend runs at `http://localhost:5173`
 
-Create a *.env* file inside the **backend/** directory:
+## Environment Variables
 
-Update these with your database user name, password and so on:
+### `backend/.env`
 
-Example for development server:
-```
+```env
 DB_USER=postgres
-DB_PASSWORD=password
+DB_PASSWORD=your_postgres_password
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=aqhi_db
+GROQ_API_KEY=your_groq_api_key
+ALLOWED_ORIGIN=http://localhost:5173
 ```
 
-### 5. Frontend Environment Configuration
+### `frontend/.env`
 
-Create a `.env` file inside the **frontend/** directory:
-
-Example:
-```
+```env
 VITE_API_URL=http://localhost:8000/graphql
-```
-This variable defines the backend GraphQL API endpoint used by the frontend application.
-
-Ensure the backend server is running before starting the frontend.
-
-## Running the Application
-1. Start the backend server
-
-2. Start the frontend server
-
-3. Open your browser at:
-```
-http://localhost:5173
+VITE_BASE_URL=http://localhost:8000
+VITE_AGENT_URL=http://localhost:8000/agent/chat
 ```
 
-## Usage
+## Running The App
 
-- Select location and year filters
-- Switch between forecast and observation datasets
-- Explore visualizations:
-    - Trend charts
-    - Distribution charts
-    - Hourly patterns
-    - Map-based AQHI visualization
+1. Start PostgreSQL
+2. Start the backend
+3. Start the frontend
+4. Open `http://localhost:5173`
 
-## Notes & Limitations
-- The current dataset includes AQHI data for the year 2026 only, limiting the ability to analyze long-term trends, seasonal variations across multiple years, and historical comparisons.
-- Requires Mapbox API key for geospatial visualization  
-- Uses static datasets (no real-time data streaming)  
- 
+## Docker Deployment
+
+A Docker-based Cybera deployment setup is included:
+
+- `docker-compose.yml`
+- `backend/Dockerfile`
+- `frontend/Dockerfile`
+- `frontend/nginx.conf`
+- `.env.docker.example`
+- `DEPLOY_CYBERA_DOCKER.md`
+
+For Cybera deployment steps, see **DEPLOY_CYBERA_DOCKER.md**
+
+## Notes
+
+- the frontend now uses MapLibre
+- the backend supports both seeded CSV data and live refresh
+- the AQHI assistant is tuned to answer in plain language and avoid dumping raw SQL back to users
