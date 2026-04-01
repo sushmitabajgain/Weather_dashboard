@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import Map, { Layer, Popup, Source } from "react-map-gl";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { MAP_STYLE_URL } from "../config";
 
 const SOURCE_ID = "aqhi-points";
 const LAYER_HIT = "aqhi-hit";
@@ -9,8 +10,6 @@ const LAYER_AURA = "aqhi-aura";
 const LAYER_RING = "aqhi-ring";
 const LAYER_CORE = "aqhi-core";
 const LAYER_LABEL = "aqhi-label";
-
-const MAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
 const AQHI_COLOR = [
   "match",
@@ -247,7 +246,7 @@ export default function MapView({ data }) {
         <Map
           ref={mapRef}
           mapLib={maplibregl}
-          mapStyle={MAP_STYLE}
+          mapStyle={MAP_STYLE_URL}
           initialViewState={{ longitude: -96, latitude: 57, zoom: 3 }}
           interactiveLayerIds={[LAYER_HIT, LAYER_CORE]}
           style={styles.map}

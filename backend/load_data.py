@@ -1,18 +1,9 @@
-import pandas as pd
 import ast
-import os
+
+import pandas as pd
 from sqlalchemy import create_engine
-from dotenv import load_dotenv
 
-load_dotenv()
-
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
-
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+from app.core.config import DATABASE_URL
 
 engine = create_engine(DATABASE_URL)
 
@@ -21,7 +12,7 @@ def parse_coordinates(coord_text):
     try:
         coords = ast.literal_eval(coord_text)
         return coords[0], coords[1]
-    except:
+    except (SyntaxError, TypeError, ValueError):
         return None, None
 
 

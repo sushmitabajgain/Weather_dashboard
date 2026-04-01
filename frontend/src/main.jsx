@@ -9,10 +9,11 @@ import {
   ApolloProvider,
   HttpLink,
 } from "@apollo/client";
+import { API_URL } from "./config";
 
 const client = new ApolloClient({
   link: new HttpLink({
-    uri: import.meta.env.VITE_API_URL || "/graphql",
+    uri: API_URL,
   }),
   cache: new InMemoryCache(),
 });

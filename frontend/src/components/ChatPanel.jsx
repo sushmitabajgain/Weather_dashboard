@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-
-const AGENT_URL = import.meta.env.VITE_AGENT_URL || "/agent/chat";
+import { AGENT_URL } from "../config";
 
 const SUGGESTIONS = [
   "Which location had the highest average AQHI?",
@@ -24,6 +23,20 @@ export default function ChatPanel() {
     const question = (text || input).trim();
     if (!question || loading) return;
 
+    const isTooShort = question.split(/\s+/).length < 2 && question.length < 8;
+    if (isTooShort) {
+      setInput("");
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", text: question },
+        {
+          role: "assistant",
+          text: "Please ask a fuller AQHI question, like 'Show low-risk locations today' or 'Which stations are in the Low category right now?'",
+        },
+      ]);
+      return;
+    }
+
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text: question }]);
     setLoading(true);
@@ -32,7 +45,13 @@ export default function ChatPanel() {
       const res = await fetch(AGENT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({
+          question,
+          history: messages.slice(-6).map((message) => ({
+            role: message.role,
+            text: message.text,
+          })),
+        }),
       });
       const data = await res.json();
       setMessages((prev) => [

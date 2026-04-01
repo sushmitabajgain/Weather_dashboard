@@ -17,6 +17,12 @@ import HourlyChart from "../components/HourlyChart";
 import KPI from "../components/KPI";
 import LineChart from "../components/LineChart";
 import MapView from "../components/MapView";
+import {
+  BASE_URL,
+  DASHBOARD_ALL_DATA_YEAR,
+  DEFAULT_DATASET_TYPE,
+  DEFAULT_TIME_RANGE,
+} from "../config";
 
 const RESPONSIVE_STYLE_ID = "dashboard-responsive-styles";
 
@@ -244,15 +250,15 @@ const TIME_PRESETS = {
   "24h": { lastHours: 24, year: null },
   "48h": { lastHours: 48, year: null },
   "7d": { lastHours: 168, year: null },
-  year: { lastHours: null, year: 2026 },
+  year: { lastHours: null, year: DASHBOARD_ALL_DATA_YEAR },
 };
 
 const KPI_COLORS = ["#0072b2", "#009e73", "#e69f00", "#cc79a7"];
 
 export default function Dashboard() {
-  const [timeRange, setTimeRange] = useState("24h");
+  const [timeRange, setTimeRange] = useState(DEFAULT_TIME_RANGE);
   const [locations, setLocations] = useState([]);
-  const [datasetType, setDatasetType] = useState("Forecast");
+  const [datasetType, setDatasetType] = useState(DEFAULT_DATASET_TYPE);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -290,8 +296,7 @@ export default function Dashboard() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const baseUrl = import.meta.env.VITE_BASE_URL || "";
-      const response = await fetch(`${baseUrl}/data/refresh`, {
+      const response = await fetch(`${BASE_URL}/data/refresh`, {
         method: "POST",
       });
       const payload = await response.json();

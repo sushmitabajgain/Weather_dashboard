@@ -6,7 +6,7 @@ server {
     index index.html;
 
     location /graphql {
-        proxy_pass http://backend:8000/graphql;
+        proxy_pass ${NGINX_BACKEND_UPSTREAM}/graphql;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -15,7 +15,7 @@ server {
     }
 
     location /agent/ {
-        proxy_pass http://backend:8000/agent/;
+        proxy_pass ${NGINX_BACKEND_UPSTREAM}/agent/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -24,7 +24,7 @@ server {
     }
 
     location /data/ {
-        proxy_pass http://backend:8000/data/;
+        proxy_pass ${NGINX_BACKEND_UPSTREAM}/data/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

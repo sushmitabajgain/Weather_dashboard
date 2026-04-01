@@ -1,12 +1,13 @@
 import Select from "react-select";
 import { useQuery } from "@apollo/client";
 import { GET_LOCATIONS } from "../graphql/queries";
+import { DASHBOARD_ALL_DATA_YEAR } from "../config";
 
 const TIME_RANGE_OPTIONS = [
   { value: "24h", label: "Last 24 Hours" },
   { value: "48h", label: "Last 48 Hours" },
   { value: "7d", label: "Last 7 Days" },
-  { value: "year", label: "All (2026)" },
+  { value: "year", label: `All (${DASHBOARD_ALL_DATA_YEAR})` },
 ];
 
 export default function Filters({ timeRange, setTimeRange, locations, setLocations }) {

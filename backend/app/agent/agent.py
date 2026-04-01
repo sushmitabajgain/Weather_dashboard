@@ -1,10 +1,8 @@
-﻿import os
-from dotenv import load_dotenv
-from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import create_sql_agent
+from langchain_community.utilities import SQLDatabase
 from langchain_groq import ChatGroq
 
-load_dotenv()
+from app.core.config import AGENT_VERBOSE, DATABASE_URL, GROQ_MODEL
 
 AQHI_CONTEXT = """You are an expert AQHI (Air Quality Health Index) data analyst for a \
 Canadian air quality dashboard.
@@ -39,28 +37,22 @@ def get_agent():
     if _agent is not None:
         return _agent
 
-    db_url = (
-        f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
-        f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
-    )
-
     db = SQLDatabase.from_uri(
-        db_url,
+        DATABASE_URL,
         include_tables=["aqhi_data"],
         sample_rows_in_table_info=3,
     )
 
     llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
+        model=GROQ_MODEL,
         temperature=0,
-        api_key=os.getenv("GROQ_API_KEY"),
     )
 
     _agent = create_sql_agent(
         llm=llm,
         db=db,
         agent_type="tool-calling",
-        verbose=True,
+        verbose=AGENT_VERBOSE,
         prefix=AQHI_CONTEXT,
     )
 

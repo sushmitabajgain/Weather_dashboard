@@ -27,16 +27,33 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-aqhi_db}
+      DATABASE_URL: ${DATABASE_URL:-}
       GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      AGENT_VERBOSE: ${AGENT_VERBOSE:-false}
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost}
+      BACKEND_TITLE: ${BACKEND_TITLE:-AQHI Backend API}
+      ECCC_BASE_URL: ${ECCC_BASE_URL:-https://api.weather.gc.ca/collections}
+      LIVE_REFRESH_INTERVAL_MINUTES: ${LIVE_REFRESH_INTERVAL_MINUTES:-30}
+      LIVE_REFRESH_LOOKBACK_HOURS: ${LIVE_REFRESH_LOOKBACK_HOURS:-48}
+      LIVE_REFRESH_LOOKAHEAD_HOURS: ${LIVE_REFRESH_LOOKAHEAD_HOURS:-48}
+      LIVE_REFRESH_PAGE_SIZE: ${LIVE_REFRESH_PAGE_SIZE:-500}
+      LIVE_REFRESH_TIMEOUT_SECONDS: ${LIVE_REFRESH_TIMEOUT_SECONDS:-30}
+      LIVE_REFRESH_VERIFY_SSL: ${LIVE_REFRESH_VERIFY_SSL:-false}
 
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: /graphql
-        VITE_BASE_URL: ""
-        VITE_AGENT_URL: /agent/chat
+        VITE_API_URL: ${VITE_API_URL:-/graphql}
+        VITE_BASE_URL: ${VITE_BASE_URL:-}
+        VITE_AGENT_URL: ${VITE_AGENT_URL:-/agent/chat}
+        VITE_MAP_STYLE_URL: ${VITE_MAP_STYLE_URL:-https://basemaps.cartocdn.com/gl/positron-gl-style/style.json}
+        VITE_DASHBOARD_ALL_DATA_YEAR: ${VITE_DASHBOARD_ALL_DATA_YEAR:-2026}
+        VITE_DEFAULT_TIME_RANGE: ${VITE_DEFAULT_TIME_RANGE:-24h}
+        VITE_DEFAULT_DATASET_TYPE: ${VITE_DEFAULT_DATASET_TYPE:-Forecast}
+    environment:
+      NGINX_BACKEND_UPSTREAM: ${NGINX_BACKEND_UPSTREAM:-http://backend:8000}
     restart: unless-stopped
     depends_on:
       - backend
