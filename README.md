@@ -364,3 +364,7 @@ docker compose down -v
 - The map uses MapLibre GL, so no Mapbox token is required for the included base tile setup
 - The backend supports both seeded CSV loading and live AQHI refresh
 - The AQHI assistant is designed to answer in plain language and avoid exposing raw SQL in user-facing responses
+
+## Additional Documentation
+
+Agent-related project documentation is available in [AGENTS.md](AGENTS.md).
