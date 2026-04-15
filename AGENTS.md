@@ -4,7 +4,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-AQHI (Air Quality Health Index) Visualization Dashboard — a full-stack app for exploring Canadian air quality data. Backend serves a GraphQL API and an AI chat endpoint; frontend is a single-page React dashboard with charts, a map, and a chat panel.
+AQHI (Air Quality Health Index) Visualization Dashboard is a full-stack application for exploring Canadian air quality data. The backend serves a GraphQL API and an AI chat endpoint, while the frontend is a single-page React dashboard with charts, a map, and a chat panel.
 
 ## Commands
 
@@ -71,23 +71,23 @@ The `aqhi_data` table is created automatically by SQLAlchemy on first startup (v
 
 `main.py` is the FastAPI entry point. It calls `load_dotenv()`, registers three routers, and starts an APScheduler job that auto-refreshes live data every 30 minutes on startup:
 
-- **`/graphql`** — Strawberry GraphQL (all dashboard queries)
-- **`/agent/chat`** — POST endpoint for natural-language AQHI queries
-- **`/data/refresh`** and **`/data/status`** — REST endpoints to manually trigger or check live data refresh
+- **`/graphql`**: Strawberry GraphQL for all dashboard queries
+- **`/agent/chat`**: POST endpoint for natural-language AQHI queries
+- **`/data/refresh`** and **`/data/status`**: REST endpoints to manually trigger or check live data refresh
 
-**Data flow — two sources:**
+**Data flow with two sources:**
 1. **Static CSV** (`load_data.py`): one-time bulk load of `aqhi_forecast.csv` and `aqhi_observations.csv` into the `aqhi_data` table.
 2. **Live ECCC GeoMet API** (`app/services/live_data.py`): fetches a ±48-hour window from `https://api.weather.gc.ca/collections` and atomically replaces the table contents (TRUNCATE + INSERT).
 
 **`app/` package layout:**
-- `db/models.py` — single SQLAlchemy model `AQHI` mapping the `aqhi_data` table
-- `db/session.py` — `SessionLocal`, `engine`, `Base`
-- `graphql/schema.py` — Strawberry schema with 6 query fields: `aqhiData`, `kpis`, `hourlyAvg`, `categoryDistribution`, `mapPoints`, `locations`; all data fields accept optional `year`, `locations`, `datasetType`, and `lastHours` filter args
-- `services/aqhi_service.py` — all query logic; every function shares the `apply_filters(query, year, locations, dataset_type, last_hours)` helper. When `last_hours` is set it takes precedence over `year`.
-- `services/live_data.py` — ECCC API fetch + DB reload; sets `verify=False` to bypass SSL-inspecting proxies on university networks
-- `agent/agent.py` — lazily initialised LangChain SQL agent using `ChatGroq` (model: `llama-3.3-70b-versatile`) with domain context injected as a prefix
-- `agent/router.py` — exposes `POST /agent/chat` accepting `{ "question": "..." }`, returns `{ "answer": "..." }`
-- `routers/data.py` — async wrappers around `refresh_live_data`
+- `db/models.py`: single SQLAlchemy model `AQHI` that maps the `aqhi_data` table
+- `db/session.py`: `SessionLocal`, `engine`, `Base`
+- `graphql/schema.py`: Strawberry schema with 6 query fields: `aqhiData`, `kpis`, `hourlyAvg`, `categoryDistribution`, `mapPoints`, `locations`; all data fields accept optional `year`, `locations`, `datasetType`, and `lastHours` filter args
+- `services/aqhi_service.py`: query logic shared across the backend. Every function uses the `apply_filters(query, year, locations, dataset_type, last_hours)` helper. When `last_hours` is set, it takes precedence over `year`.
+- `services/live_data.py`: fetches from the ECCC API and reloads the database. It sets `verify=False` to bypass SSL-inspecting proxies on university networks.
+- `agent/agent.py`: lazily initialized LangChain SQL agent using `ChatGroq` with model `llama-3.3-70b-versatile` and AQHI-specific domain context
+- `agent/router.py`: exposes `POST /agent/chat`, accepts `{ "question": "..." }`, and returns `{ "answer": "..." }`
+- `routers/data.py`: async wrappers around `refresh_live_data`
 
 **AQHI category thresholds** (used in both `load_data.py` and `live_data.py`): ≤3 → Low, 4–6 → Moderate, 7–10 → High, >10 → Very High.
 
@@ -103,4 +103,4 @@ Single-page app. `src/main.jsx` bootstraps `ApolloProvider` reading the GraphQL 
 
 `src/components/` contains self-contained presentational components (`LineChart`, `DonutChart`, `HourlyChart`, `MapView`, `DataTable`, `KPI`, `Filters`, `ChatPanel`). `Filters.jsx` issues the `GET_LOCATIONS` query itself to populate the multi-select. `ChatPanel` calls `POST /agent/chat` directly via `fetch`.
 
-The map uses **MapLibre GL** (via `react-map-gl`) — no Mapbox token is needed for the base tile layer used.
+The map uses **MapLibre GL** through `react-map-gl`. No Mapbox token is needed for the base tile layer used.
